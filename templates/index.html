@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseOps | Operations Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+
+<body>
+    <header class="topbar">
+        <a class="brand" href="/">
+            <span class="brand-icon">P</span>
+            <span>PulseOps</span>
+        </a>
+
+        <div class="live-label">
+            <span class="live-dot"></span>
+            LIVE MONITORING
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <section class="page-heading">
+            <div>
+                <p class="eyebrow">OPERATIONS CENTER</p>
+                <h1>System overview</h1>
+                <p class="subtitle">
+                    Monitor service health, resource utilization and automated recovery history.
+                </p>
+            </div>
+
+            <div class="updated-box">
+                <span class="muted">Last monitor update</span>
+                <strong id="lastUpdated">Waiting for data...</strong>
+            </div>
+        </section>
+
+        <div id="dashboardError" class="error-banner" hidden></div>
+
+        <section class="section">
+            <div class="section-heading">
+                <h2>Current performance</h2>
+                <span class="muted">Refreshes every 5 seconds</span>
+            </div>
+
+            <div class="metric-grid">
+                <article class="metric-card health-card">
+                    <div class="card-label">SERVICE: <span id="serviceName">DemoApp</span></div>
+                    <div id="serviceStatus" class="status-pill unknown">
+                        UNKNOWN
+                    </div>
+                    <p id="healthDetail" class="card-caption">
+                        Waiting for monitor
+                    </p>
+                </article>
+
+                <article class="metric-card" id="cpuCard">
+                    <div class="card-label">CPU UTILIZATION</div>
+                    <div id="cpuValue" class="metric-value">--%</div>
+                    <div id="cpuState" class="card-caption">
+                        System CPU usage
+                    </div>
+                    <div class="progress-track">
+                        <div id="cpuBar" class="progress-fill cpu-fill"></div>
+                    </div>
+                </article>
+
+                <article class="metric-card" id="memoryCard">
+                    <div class="card-label">MEMORY UTILIZATION</div>
+                    <div id="memoryValue" class="metric-value">--%</div>
+                    <div id="memoryState" class="card-caption">
+                        System RAM usage
+                    </div>
+                    <div class="progress-track">
+                        <div id="memoryBar" class="progress-fill memory-fill"></div>
+                    </div>
+                </article>
+
+                <article class="metric-card" id="diskCard">
+                    <div class="card-label">DISK UTILIZATION</div>
+                    <div id="diskValue" class="metric-value">--%</div>
+                    <div id="diskState" class="card-caption">
+                        System disk usage
+                    </div>
+                    <div class="progress-track">
+                        <div id="diskBar" class="progress-fill disk-fill"></div>
+                    </div>
+                </article>
+
+                <article class="metric-card">
+                    <div class="card-label">TOTAL INCIDENTS</div>
+                    <div id="totalIncidents" class="metric-value">0</div>
+                    <div class="card-caption summary-breakdown">
+                        <span class="stat-item open"><strong id="openCount">0</strong> open</span> ·
+                        <span class="stat-item recovered"><strong id="recoveredCount">0</strong> recovered</span> ·
+                        <span class="stat-item unresolved"><strong id="unresolvedCount">0</strong> unresolved</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="section-heading">
+                <div>
+                    <h2>Resource utilization</h2>
+                    <p class="muted">
+                        Historical system CPU, memory and disk measurements (0–100%)
+                    </p>
+                </div>
+
+                <div class="chart-legend">
+                    <span><i class="legend-dot cpu-color"></i>CPU</span>
+                    <span><i class="legend-dot memory-color"></i>Memory</span>
+                    <span><i class="legend-dot disk-color"></i>Disk</span>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="metricsChart" role="img"
+                    aria-label="Recent CPU, memory and disk utilization chart"></canvas>
+            </div>
+        </section>
+
+        <section class="panel incidents-panel">
+            <div class="section-heading">
+                <div>
+                    <h2>Recent incidents</h2>
+                    <p class="muted">
+                        Failure detection and automated recovery history
+                    </p>
+                </div>
+                <span class="table-note">Latest 10 records from SQLite</span>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>INCIDENT</th>
+                            <th>SERVICE</th>
+                            <th>FAILURE TYPE</th>
+                            <th>DETECTED AT</th>
+                            <th>ATTEMPTS</th>
+                            <th>RESOLVED AT</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="incidentRows">
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                Loading incident history...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer>
+            PulseOps · Self-Healing Application Monitoring System
+        </footer>
+    </main>
+</body>
+
+</html>
