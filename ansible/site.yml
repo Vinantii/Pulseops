@@ -1,0 +1,62 @@
+---
+- name: Verify PulseOps deployment
+  hosts: local
+  gather_facts: false
+
+  vars:
+    project_dir: /home/ubuntu/projects/Pulseops
+
+  tasks:
+    - name: Check Docker daemon
+      become: true
+      ansible.builtin.service:
+        name: docker
+        state: started
+      register: docker_service
+
+    - name: Check running Compose services
+      become: true
+      ansible.builtin.command:
+        cmd: docker compose ps --services --status running
+        chdir: "{{ project_dir }}"
+      register: running_services
+      changed_when: false
+
+    - name: Confirm all three services are running
+      ansible.builtin.assert:
+        that:
+          - "'demo-app' in running_services.stdout_lines"
+          - "'pulseops-dashboard' in running_services.stdout_lines"
+          - "'pulseops-monitor' in running_services.stdout_lines"
+        fail_msg: "One or more PulseOps services are not running."
+        success_msg: "All three PulseOps services are running."
+
+    - name: Check dashboard status API
+      ansible.builtin.uri:
+        url: http://127.0.0.1:5000/api/status
+        method: GET
+        status_code: 200
+        return_content: true
+      register: dashboard_status
+
+    - name: Check dashboard incident API
+      ansible.builtin.uri:
+        url: http://127.0.0.1:5000/api/incidents
+        method: GET
+        status_code: 200
+        return_content: true
+
+    - name: Check DemoApp health from monitor container
+      become: true
+      ansible.builtin.command:
+        cmd: >-
+          docker exec pulseops-monitor python -c
+          "import urllib.request;
+          urllib.request.urlopen(
+          'http://demo-app:5001/health', timeout=5)"
+      register: demoapp_health
+      changed_when: false
+
+    - name: Display current monitored service state
+      ansible.builtin.debug:
+        var: dashboard_status.json
