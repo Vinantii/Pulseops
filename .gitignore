@@ -20,3 +20,4 @@ htmlcov/
 # Local database files
 *.db
 *.sqlite3
+*.save

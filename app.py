@@ -7,7 +7,7 @@ from incident_store import (
     get_recent_metrics,
     get_incident_summary,
 )
-
+import os
 app = Flask(__name__)
 
 # Ensure tables are initialized when the dashboard app starts
@@ -96,7 +96,7 @@ def api_metrics():
 
 if __name__ == "__main__":
     app.run(
-        host="127.0.0.1",
-        port=5000,
-        debug=True,
+        host=os.environ.get("PULSEOPS_HOST", "127.0.0.1"),
+        port=int(os.environ.get("PULSEOPS_PORT", "5000")),
+        debug=False
     )

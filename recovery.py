@@ -5,16 +5,27 @@ from datetime import datetime
 import requests
 
 from incident_store import init_db, update_incident
-
+import os
 
 # DemoApp endpoints
-HEALTH_URL = "http://127.0.0.1:5001/health"
+HEALTH_URL = os.environ.get(
+    "PULSEOPS_HEALTH_URL",
+    "http://127.0.0.1:5001/health"
+)
+
+SIMULATED_RECOVERY_URL = os.environ.get(
+    "PULSEOPS_RECOVERY_URL",
+    "http://127.0.0.1:5001/test-recovery"
+)
+
+RECOVERY_TOKEN = os.environ.get(
+    "PULSEOPS_RECOVERY_TOKEN",
+    ""
+)
 
 # Local testing only; this resets the simulated failure.
 # We will replace this with a controlled service restart on AWS.
-SIMULATED_RECOVERY_URL = (
-    "http://127.0.0.1:5001/test-recovery"
-)
+
 
 REQUEST_TIMEOUT = 3
 MAX_RECOVERY_ATTEMPTS = 3
@@ -24,7 +35,7 @@ RETRY_DELAY = 2
 COOLDOWN_SECONDS = 15
 
 last_recovery_time = 0.0
-
+AGENT_REQUEST_TIMEOUT = 35
 
 def log(message):
     """Print a timestamped recovery event."""
@@ -46,27 +57,48 @@ def is_healthy():
     except requests.RequestException:
         return False
 
-
 def perform_recovery_action():
-    """Reset the simulated failure during local development."""
+    """Request a restricted restart of the DemoApp container."""
+
+    if not RECOVERY_TOKEN:
+        log("Recovery failed: token is not configured.")
+        return False
+
     try:
-        response = requests.get(
+        response = requests.post(
             SIMULATED_RECOVERY_URL,
-            timeout=REQUEST_TIMEOUT
+            headers={
+                "Authorization": f"Bearer {RECOVERY_TOKEN}"
+            },
+            timeout=AGENT_REQUEST_TIMEOUT,
         )
 
         if response.status_code == 200:
-            log("Local simulated recovery action completed.")
+            log("Host recovery agent accepted the restart request.")
             return True
 
         log(
-            f"Recovery action failed with HTTP "
+            f"Recovery agent returned HTTP "
             f"{response.status_code}."
         )
         return False
 
     except requests.RequestException as error:
-        log(f"Recovery action failed: {error}")
+        log(f"Recovery agent request failed: {error}")
+
+        # A restart may have succeeded even if the response was delayed.
+        # Verify actual application health before declaring failure.
+        for check_number in range(5):
+            if is_healthy():
+                log(
+                    "DemoApp is healthy after the recovery request. "
+                    "Treating recovery as successful."
+                )
+                return True
+
+            if check_number < 4:
+                time.sleep(1)
+
         return False
 
 

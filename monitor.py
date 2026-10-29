@@ -15,7 +15,11 @@ from incident_store import (
 
 
 # DemoApp configuration
-HEALTH_URL = "http://127.0.0.1:5001/health"
+HEALTH_URL = os.environ.get(
+    "PULSEOPS_HEALTH_URL",
+    "http://127.0.0.1:5001/health"
+)
+
 CHECK_INTERVAL = 5
 REQUEST_TIMEOUT = 3
 FAILURE_LIMIT = 3

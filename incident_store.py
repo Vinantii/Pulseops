@@ -3,11 +3,15 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-
+import os
 
 # Store the database alongside the project files.
-DB_PATH = Path(__file__).resolve().parent / "incidents.db"
-
+DB_PATH = Path(
+    os.environ.get(
+        "PULSEOPS_DB_PATH",
+        str(Path(__file__).resolve().parent / "incidents.db")
+    )
+)
 
 def current_timestamp():
     """Return the current local date and time."""

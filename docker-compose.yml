@@ -1,0 +1,75 @@
+x-pulseops-common: &pulseops-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: pulseops-app:local
+  environment:
+    PULSEOPS_DB_PATH: /data/incidents.db
+  volumes:
+    - pulseops_data:/data
+  networks:
+    - pulseops-net
+  restart: unless-stopped
+
+services:
+  demo-app:
+    build:
+      context: ./target-app
+      dockerfile: Dockerfile
+    image: pulseops-demo-app:local
+    container_name: pulseops-demo-app
+    environment:
+      DEMOAPP_HOST: "0.0.0.0"
+    expose:
+      - "5001"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/health', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - pulseops-net
+    restart: unless-stopped
+
+  pulseops-dashboard:
+    <<: *pulseops-common
+    container_name: pulseops-dashboard
+    command:
+      - gunicorn
+      - --workers
+      - "1"
+      - --threads
+      - "4"
+      - --bind
+      - 0.0.0.0:5000
+      - app:app
+    ports:
+      - "5000:5000"
+
+  pulseops-monitor:
+    <<: *pulseops-common
+    container_name: pulseops-monitor
+    command:
+      - python
+      - -u
+      - monitor.py
+    environment:
+      PULSEOPS_DB_PATH: /data/incidents.db
+      PULSEOPS_HEALTH_URL: http://demo-app:5001/health
+      PULSEOPS_RECOVERY_URL: http://172.18.0.1:8765/restart-demo-app
+      PULSEOPS_RECOVERY_TOKEN: ${PULSEOPS_RECOVERY_TOKEN:?Recovery token missing from .env}    
+    depends_on:
+      demo-app:
+        condition: service_healthy
+
+volumes:
+  pulseops_data:
+
+networks:
+  pulseops-net:
+    driver: bridge
