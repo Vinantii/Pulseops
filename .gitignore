@@ -21,3 +21,8 @@ htmlcov/
 *.db
 *.sqlite3
 *.save
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+crash.log
